@@ -1,6 +1,5 @@
 package com.yogesh.networkaggregator.shared.configuration.proxy;
 
-
 import com.yogesh.networkaggregator.shared.exception.rest.CustomizedRestResponseErrorHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.InitializingBean;
@@ -18,14 +17,25 @@ import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.Proxy;
 
+/**
+ * Configuration class for system-wide HTTP proxy settings.
+ * This class configures proxy settings for the application and provides
+ * proxy-aware
+ * RestTemplate and RestClient beans. It is only active in the 'dev' profile.
+ */
 @Configuration
 @RequiredArgsConstructor
 @Profile("dev")
 public class SystemProxyConfig implements InitializingBean {
     private final ProxySettings proxy;
+
     @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
     private String jwkSetUri;
 
+    /**
+     * Initializes system-wide proxy properties after bean construction.
+     * Sets HTTP and HTTPS proxy host and port system properties.
+     */
     @Override
     public void afterPropertiesSet() {
         System.setProperty("http.proxyHost", proxy.host());
@@ -35,6 +45,13 @@ public class SystemProxyConfig implements InitializingBean {
         System.setProperty("https.proxyPort", Integer.toString(proxy.port()));
     }
 
+    /**
+     * Creates a proxy-aware RestClient bean.
+     * This RestClient is configured with proxy settings and basic authentication
+     * if credentials are provided.
+     *
+     * @return configured RestClient instance with proxy support
+     */
     @Primary
     @Bean
     public RestClient restClient() {
@@ -42,6 +59,11 @@ public class SystemProxyConfig implements InitializingBean {
         requestFactory.setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxy.host(), proxy.port())));
 
         Authenticator.setDefault(new Authenticator() {
+            /**
+             * Provides proxy authentication credentials when requested.
+             *
+             * @return PasswordAuthentication for proxy authentication
+             */
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 if (getRequestorType() == RequestorType.PROXY) {
@@ -57,14 +79,25 @@ public class SystemProxyConfig implements InitializingBean {
                 .build();
     }
 
+    /**
+     * Creates a proxy-aware RestTemplate bean.
+     * This RestTemplate is configured with proxy settings, basic authentication,
+     * custom error handling, and connection timeouts.
+     *
+     * @return configured RestTemplate instance with proxy support
+     */
     @Primary
     @Bean
     public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setProxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxy.host(), proxy.port())));
-        // Set proxy authentication if username and password are provided
 
         Authenticator.setDefault(new Authenticator() {
+            /**
+             * Provides proxy authentication credentials when requested.
+             *
+             * @return PasswordAuthentication for proxy authentication
+             */
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
                 if (getRequestorType() == RequestorType.PROXY) {
@@ -76,14 +109,11 @@ public class SystemProxyConfig implements InitializingBean {
         });
 
         RestTemplate restTemplate = new RestTemplate(requestFactory);
-        // Set a custom error handler
         restTemplate.setErrorHandler(new CustomizedRestResponseErrorHandler());
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000); // 5 seconds
-        factory.setReadTimeout(10000);   // 10 seconds
+        factory.setReadTimeout(10000); // 10 seconds
 
         return restTemplate;
     }
-
-
 }
