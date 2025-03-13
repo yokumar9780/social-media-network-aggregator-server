@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: social-media-network-aggregator-server
+  messages:
+    basename: i18n/messages
+  threads:
+    virtual:
+      enabled: true
+  output:
+    ansi:
+      enabled: ALWAYS
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${ISSUER_URI:https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_B7f8LnlkB}
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/.well-known/jwks.json
+  data:
+    mongodb:
+      database: ${DATABASE:${spring.application.name}}
+      uri: ${DB_URL:mongodb://localhost:27017/${spring.data.mongodb.database}?retryWrites=true&w=majority}
+      auto-index-creation: true
+      authentication-database: ${DATABASE:${spring.application.name}}
+cors:
+  allowed:
+    headers: ${CORS_ALLOWED_HEADERS:'*'}
+    methods: ${CORS_ALLOWED_METHODS:'*'}
+    origins: ${CORS_ALLOWED_ORIGIN:'*'}
+
+server:
+  port: 8080
+
+management:
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
+      export:
+        enabled: true
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+logging:
+  file:
+    path: ${user.dir}${file.separator}logs${file.separator}${spring.application.name}
+    name: ${spring.application.name}.log
+  include-application-name: true
+  level:
+    com:
+      yogesh:
+        networkaggregator:
+          shared: debug
+pagination:
+  default-page-number: 0
+  default-page-size: 10
+swagger:
+  server-url: '${SWAGGER_URL:http://localhost:${server.port}}'
+  version: '${SWAGGER_VERSION:dev}'
+  contact-email: ${SWAGGER_CONTACT_EMAIL:support@networkaggregator.io}
+  contact-name: ${SWAGGER_CONTACT_NAME:VGCS}
+  contact-url: ${SWAGGER_CONTACT_URL:https://networkaggregator.io}
+  licence-url: ${SWAGGER_LICENCE_URL:https://networkaggregator.io/licenses}
+  terms-url: ${SWAGGER_TERMS_URL:https://networkaggregator.io/terms}
+  token-url: ${SWAGGER_TOKEN_URL:https://networkaggregator-dev.auth.eu-west-1.amazoncognito.com/oauth2/token}
+
+
+---
+# Profile specific configuration for 'test'
+spring:
+  config:
+    activate:
+      on-profile: test
+
+---
+# Profile specific configuration for 'setup'
+spring:
+  config:
+    activate:
+      on-profile: setup
+
